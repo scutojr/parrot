@@ -1,0 +1,6 @@
+---
+
+name: example
+route: "/example/xxx"
+policy:
+    - concurrency: 5
