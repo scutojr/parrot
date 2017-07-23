@@ -7,8 +7,11 @@ import yaml
 class Loader(object):
 
     def __init__(self, conf):
-        self.config_dir = conf['config_dir']
+        self.config_dir = conf['event.root_dir']
         self.reload()
+
+    def __iter__(self):
+        return self.event_books.iteritems()
 
     def reload(self):
         files = os.listdir(self.config_dir)

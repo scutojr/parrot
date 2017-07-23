@@ -1,6 +1,11 @@
 from functools import partial
 
 
+__all__ = [
+    'BaseEvent'
+]
+
+
 def _generic_getter(prop_name, self):
     try:
         return self._attributes[prop_name]
@@ -47,3 +52,7 @@ class BaseEvent(object):
     _route = FieldAttribute('str', '')
     _policy = FieldAttribute('list', [])
 
+    def __init__(self, src_yml):
+        self.name = src_yml['name']
+        self.route = src_yml['route']
+        self.policy = src_yml['policy']
