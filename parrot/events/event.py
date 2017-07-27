@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 
 
@@ -30,29 +31,46 @@ class FieldAttribute(object):
 
 class Base(type):
 
-    def __new__(cls, *args, **kwarg):
-        dst = super(Base, cls).__new__(cls, *args, **kwarg)
+    def __new__(cls, name, bases, namespace):
+        dst = super(Base, cls).__new__(cls, name, bases, namespace)
         attributes = dict()
-        for attr_name, attr in dst.__dict__.items():
-            if isinstance(attr, FieldAttribute):
-                attr_name = attr_name.lstrip('_')
-                getter = partial(_generic_getter, attr_name)
-                setter = partial(_generic_setter, attr_name)
-                deleter = partial(_generic_deleter, attr_name)
-                setattr(dst, attr_name, property(getter, setter, deleter))
-                attributes[attr_name] = attr.default
+        for member in dir(dst):
+            value = getattr(dst, member)
+            if isinstance(value, FieldAttribute):
+                member = member.lstrip('_')
+                getter = partial(_generic_getter, member)
+                setter = partial(_generic_setter, member)
+                deleter = partial(_generic_deleter, member)
+                setattr(dst, member, property(getter, setter, deleter))
+                attributes[member] = copy.deepcopy(value.default)
         dst._attributes = attributes
         return dst
 
 
-class BaseEvent(object):
-    __metaclass__ = Base
+class Schedulable(object):
 
     _name = FieldAttribute('str', '')
     _route = FieldAttribute('str', '')
     _policy = FieldAttribute('list', [])
+    _executor = FieldAttribute('str', '')
 
-    def __init__(self, src_yml):
-        self.name = src_yml['name']
-        self.route = src_yml['route']
-        self.policy = src_yml['policy']
+    def load_from_ds(self, ds):
+        self.name = ds['name']
+        self.route = ds['route']
+        self.policy = ds['policy']
+        self.executor = ds['executor']
+
+
+class Executable(object):
+
+    _params = FieldAttribute('dict', {})
+    _payload = FieldAttribute('str', '')
+
+    def load_from_req(self, params, payload=''):
+        self.params = params
+        self.payload = payload
+
+
+class BaseEvent(Schedulable, Executable):
+    __metaclass__ = Base
+
