@@ -1,7 +1,7 @@
 from parrot.conf import Configuration
 from parrot.events.loader import Loader
 from parrot.events.manager import EventManager
-from parrot.scheduler.scheduler import HttpBackend
+from parrot.scheduler.scheduler import HttpBackend, FifoScheduler, ExecutorManager
 
 
 def main():
@@ -10,7 +10,11 @@ def main():
     event_manager = EventManager(loader)
     events = event_manager.get_events()
 
-    backend = HttpBackend()
+    scheduler = FifoScheduler(event_manager, 512)
+    executor_manager = ExecutorManager(scheduler)
+    executor_manager.start()
+
+    backend = HttpBackend(scheduler)
     backend.route(events)
     app = backend.get_app()
     app.run('localhost', 12213, True)

@@ -1,7 +1,10 @@
 ---
 
 name: example
-route: "/example/xxx"
-executor: "test"
+route: "/example/<string:name>/<int:uid>"
 policy:
     - concurrency: 5
+executor:
+    name: LocalScript
+    params:
+        cmd: "echo {{ name }} {{ uid }} >> /tmp/parrot_test.log"
