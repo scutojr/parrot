@@ -2,3 +2,4 @@ jinja
 flask
 pyyaml
 werkerzug
+mongoengine
