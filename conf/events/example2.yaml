@@ -1,10 +1,12 @@
 ---
 
-name: example2
-route: "/example2"
-policy:
+topic: example2
+service: DataNode
+# hostname: xxx  #TODO: optional, if provided, only hostname matched this 
+# field will be accepted. It should support range grammar like that of ansible
+schedulable:
     - concurrency: 5
-executor:
+executable:
     name: LocalScript
     params:
         cmd: "uptime >> /tmp/parrot_test.log"
