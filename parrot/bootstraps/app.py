@@ -11,11 +11,11 @@ def main():
     conf = Configuration.load()
     loader = Loader(conf)
     register = RegistrationManager(loader)
-    scheduler = FifoScheduler(512)
+    scheduler = FifoScheduler(register)
     event_manager = EventManager(register, scheduler)
 
-    # executor_manager = ExecutorManager(scheduler)
-    # executor_manager.start()
+    executor_manager = ExecutorManager(register, scheduler)
+    executor_manager.start()
 
     backend = HttpBackend(event_manager)
     app = backend.get_app()

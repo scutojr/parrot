@@ -6,23 +6,25 @@ import multiprocessing.dummy as pdummy
 from flask import Flask, request, Response
 from flask.views import View
 
-from parrot.events.event import Schedulable
+from parrot.executor.base import LocalShellExecutor
+from parrot.events.register import RegistrationManager
 from parrot.models.db.events import BasicEvent
 from parrot.events.manager import EventManager
 
 
-
 class FifoScheduler(object):
 
-    def __init__(self, queue_size):
+    def __init__(self, register: RegistrationManager):
         self._queue = queue.Queue()
+        self.register = register
 
     def register(self, event):
-        if not isinstance(event, Schedulable):
-            raise Exception('failed to register non schedulable object.')
+        pass
 
-    def dispatch(self, event):
-        self._queue.put(event)
+    def dispatch(self, event: BasicEvent):
+        exec = self.register.get_executable(event)
+        if self.register.get_executable(event) is not None:
+            self._queue.put(event)
 
     def pop(self):
         return self._queue.get()
@@ -30,27 +32,31 @@ class FifoScheduler(object):
 
 class ExecutorManager(threading.Thread):
 
-    def __init__(self, scheduler, max_running=512):
+    def __init__(self, register: RegistrationManager,
+                 scheduler: FifoScheduler, max_running: int = 512):
         super(ExecutorManager, self).__init__()
         self._pool = pdummy.Pool(max_running)
+        self._register = register
         self._scheduler = scheduler
         self._is_running = False
+
+    def _get_executor(self, name: str):
+        return LocalShellExecutor()
 
     def run(self):
         scheduler = self._scheduler
         pool = self._pool
-        def worker(event):
+        def worker(event: BasicEvent):
             try:
-                params, payload = event.params, event.payload
-                exe = event.executor
-                action = exe['class'](**exe['params'])
-                action.start(params, payload)
+                executable = self._register.get_executable(event)
+                executor = self._get_executor(executable.name)
+                executor.start(executable.params)
             except Exception as e:
                 # TODO: log the error
                 pass
         while self._is_running:
             event = scheduler.pop()
-            pool.apply_async(worker, (event,))
+            pool.apply(worker, (event,))
 
     def start(self):
         self._is_running = True
@@ -60,9 +66,10 @@ class ExecutorManager(threading.Thread):
         self._is_running = False
         self._pool.close()
 
-    def join(self):
+    def join(self, timeout=None):
+        self._pool.close()
         self._pool.join()
-        super(ExecutorManager, self).join()
+        super().join(timeout)
 
 
 class HttpHandler(View):
@@ -76,7 +83,6 @@ class HttpHandler(View):
         try:
             payload = request.data.decode()
             event = BasicEvent.from_dict(json.loads(payload))
-            print(event.tags)
             self._event_manager.add_event(event)
         except ValueError as e:
             # TODO log here
@@ -103,4 +109,3 @@ class HttpBackend(object):
 
     def get_app(self):
         return self._app
-

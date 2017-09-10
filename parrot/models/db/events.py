@@ -20,13 +20,13 @@ class BasicEvent(me.Document):
         pass
 
 
-class Executable(me.Document):
+class Schedulable(me.Document):
     concurrency = me.IntField()
 
 
-class Schedulable(me.Document):
-    engine = me.StringField()
-    params = me.ListField()
+class Executable(me.Document):
+    name = me.StringField()
+    params = me.DynamicField()
 
 
 class Event(BasicEvent):

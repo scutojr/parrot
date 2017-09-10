@@ -33,17 +33,16 @@ class BaseExecutor(object):
 
 class LocalShellExecutor(BaseExecutor):
 
-    def __init__(self, cmd):
+    def __init__(self):
         super(LocalShellExecutor, self).__init__()
-        self._cmd = Template(cmd)
         self._proc = None
         self._status = Status.INITIAL
 
-    def start(self, params, payload):
-        cmd = self._cmd.render(params)
+    def start(self, params):
+        cmd = params['cmd']
         self._status = Status.RUNNING
-        self._proc = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        self._proc.stdin.write(payload)
+        self._proc = Popen(cmd, shell=True,
+                           stdin=PIPE, stdout=PIPE, stderr=PIPE)
         self._proc.wait()
         self._status = self._proc.returncode != 0 and Status.FAILED or Status.PASSED
 

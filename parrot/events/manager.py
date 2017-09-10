@@ -1,7 +1,6 @@
 from collections import defaultdict
 
-from parrot.models.db.events import BasicEvent  # TODO: change to Event
-from parrot.events.event import BaseEvent
+from parrot.models.db.events import BasicEvent
 from parrot.events.loader import *
 from parrot.events.register import RegistrationManager
 
@@ -22,9 +21,10 @@ class EventManager(object):
         if not self.register.verify_event(event.topic, event.service,
                                     event.hostname):
             raise Exception('this event may not yet be registered!')
+        # event.save()
         id = '%s-%s-%s' % (event.topic, event.service, event.hostname)
         self._event_pool[id].append(event)
-        print('Add event to scheduler!!!')
+        self.scheduler.dispatch(event)
 
     def get_event(self, topic=None, service=None, hostname=None):
         pass

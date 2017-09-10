@@ -17,8 +17,9 @@ class TestEvent(TestCase):
         headers = {
             'Content-Type': 'application/json'
         }
+        topic = ['example1', 'example2', 'example3']
         data = {
-            'topic': 'Test-event',
+            'topic': '',
             'hostname': 'jayce.test.001',
             'service': 'Worker',
             'status': 'CRITICAL',
@@ -30,9 +31,11 @@ class TestEvent(TestCase):
             }
         }
         try:
-            data = json.dumps(data).encode()
-            req = urlReq.Request(self.url, data, headers)
-            rsp = urlReq.urlopen(req)
+            for t in topic:
+                data['topic'] = t
+                payload = json.dumps(data).encode()
+                req = urlReq.Request(self.url, payload, headers)
+                rsp = urlReq.urlopen(req)
         except urlReq.HTTPError as e:
             self.assertTrue(False, 'Failed to post event: ' + str(e))
 

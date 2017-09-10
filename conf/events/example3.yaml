@@ -1,6 +1,6 @@
 ---
 
-topic: example2
+topic: example3
 service: Worker
 hostname: jayce.test.001
 # hostname: xxx  #TODO: optional, if provided, only hostname matched this 
@@ -10,4 +10,4 @@ schedulable:
 executable:
     name: LocalScript
     params:
-        cmd: "uptime"
+        cmd: "ip a"
