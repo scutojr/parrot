@@ -1,18 +1,21 @@
-import Queue
+import queue
+import json
 import threading
 import multiprocessing.dummy as pdummy
-from copy import deepcopy
 
-from flask import Flask, request
+from flask import Flask, request, Response
 from flask.views import View
 
-from parrot.events.event import BaseEvent, Schedulable, Executable
+from parrot.events.event import Schedulable
+from parrot.models.db.events import BasicEvent
+from parrot.events.manager import EventManager
+
 
 
 class FifoScheduler(object):
 
-    def __init__(self, event_manager, queue_size):
-        self._queue = Queue.Queue()
+    def __init__(self, queue_size):
+        self._queue = queue.Queue()
 
     def register(self, event):
         if not isinstance(event, Schedulable):
@@ -63,39 +66,40 @@ class ExecutorManager(threading.Thread):
 
 
 class HttpHandler(View):
-    methods = ['GET', 'POST']
+    methods = ['POST']
 
-    def __init__(self, event, scheduler):
+    def __init__(self, event_manager: EventManager):
         super(HttpHandler, self).__init__()
-        self._event = event
-        self._scheduler = scheduler
+        self._event_manager = event_manager
 
     def dispatch_request(self, *args, **kwarg):
-        if request.method == 'POST':
-            payload = request.data
-        else:
-            payload = ''
-
-        ep = dict()
-        ep.update(kwarg)
-        ep.update(request.args)
-        event = deepcopy(self._event)
-        event.load_from_req(ep, payload)
-        self._scheduler.dispatch(event)
-        return str('')
+        try:
+            payload = request.data.decode()
+            event = BasicEvent.from_dict(json.loads(payload))
+            print(event.tags)
+            self._event_manager.add_event(event)
+        except ValueError as e:
+            # TODO log here
+            return Response('failed to parse the json: ' + str(e), 400)
+        except TypeError as e:
+            return Response('data contains undesired fields: ' + str(e), 400)
+        return Response('')
 
 
 class HttpBackend(object):
 
-    def __init__(self, scheduler):
+    def __init__(self, event_manager: EventManager):
         self._app = Flask('HttpParrot')
-        self._scheduler = scheduler
+        self._event_manager = event_manager
+        self._route()
 
-    def route(self, events):
-        for e in events:
-            self._app.add_url_rule(e.route,
-                    view_func=HttpHandler.as_view('Http-' + e.name,
-                    event=e,scheduler=self._scheduler))
+    def _route(self):
+        self._app.add_url_rule(
+            '/parrot/api/v1/events',
+            view_func=HttpHandler.as_view(
+                'dispatch-event', event_manager=self._event_manager
+            )
+        )
 
     def get_app(self):
         return self._app

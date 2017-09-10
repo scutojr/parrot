@@ -1,5 +1,4 @@
-jinja
 flask
 pyyaml
-werkerzug
 mongoengine
+flake8

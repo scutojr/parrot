@@ -7,25 +7,28 @@ class BasicEvent(me.Document):
     service = me.StringField()
     status = me.StringField()
     output = me.StringField()
-    time = me.DateTimeField()
-    tags = me.DynamicEmbeddedDocument()
+    timestampt = me.LongField()
+    tags = me.DynamicField()
+
+    meta = {'allow_inheritance': True}
 
     @staticmethod
-    def from_dict():
-        pass
+    def from_dict(data: dict):
+        return BasicEvent(**data)
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         pass
 
 
 class Executable(me.Document):
-    pass
+    concurrency = me.IntField()
 
 
 class Schedulable(me.Document):
-    pass
+    engine = me.StringField()
+    params = me.ListField()
 
 
 class Event(BasicEvent):
-    executable = me.ReferenceField('Executable')
-    schedulable = me.ReferenceField('Schedulable')
+   executable = me.ReferenceField('Executable')
+   schedulable = me.ReferenceField('Schedulable')

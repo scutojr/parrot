@@ -1,4 +1,3 @@
-import sys
 import os
 
 import yaml
@@ -11,7 +10,7 @@ class Loader(object):
         self.reload()
 
     def __iter__(self):
-        return self.event_books.iteritems()
+        return iter(self.event_books.items())
 
     def reload(self):
         files = os.listdir(self.config_dir)
