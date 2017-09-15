@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 from parrot.models.db.events import BasicEvent
-from parrot.events.loader import *
 from parrot.events.register import RegistrationManager
 
 from parrot.models.db.events import *
